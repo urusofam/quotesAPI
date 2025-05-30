@@ -14,10 +14,11 @@ type QuoteRepository interface {
 
 type quoteRepository struct {
 	quotes []models.Quote
+	lastID int
 }
 
 func NewQuoteRepository() QuoteRepository {
-	return &quoteRepository{quotes: make([]models.Quote, 0)}
+	return &quoteRepository{quotes: make([]models.Quote, 0), lastID: 0}
 }
 
 func (r *quoteRepository) AddQuote(quote models.Quote) {
