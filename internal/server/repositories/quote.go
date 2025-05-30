@@ -3,13 +3,15 @@ package repositories
 import (
 	"errors"
 	"github.com/urusofam/quotesAPI/internal/server/models"
+	"math/rand"
+	"time"
 )
 
 type QuoteRepository interface {
 	AddQuote(quote models.Quote)
-	GetAllQuotes() []models.Quote
-	GetQuoteByAuthor(author string) (models.Quote, error)
-	DeleteQuoteById(ID string) error
+	GetAllQuotesByAuthor(author string) ([]models.Quote, error)
+	DeleteQuoteById(ID int) error
+	GetRandomQuote() (models.Quote, error)
 }
 
 type quoteRepository struct {
@@ -22,23 +24,27 @@ func NewQuoteRepository() QuoteRepository {
 }
 
 func (r *quoteRepository) AddQuote(quote models.Quote) {
+	quote.ID = r.lastID
+	r.lastID++
 	r.quotes = append(r.quotes, quote)
 }
 
-func (r *quoteRepository) GetAllQuotes() []models.Quote {
-	return r.quotes
-}
+func (r *quoteRepository) GetAllQuotesByAuthor(author string) ([]models.Quote, error) {
+	var quotes []models.Quote
 
-func (r *quoteRepository) GetQuoteByAuthor(author string) (models.Quote, error) {
+	if len(r.quotes) == 0 {
+		return nil, errors.New("no quotes")
+	}
+
 	for _, quote := range r.quotes {
-		if quote.Author == author {
-			return quote, nil
+		if quote.Author == author || author == "" {
+			quotes = append(quotes, quote)
 		}
 	}
-	return models.Quote{}, errors.New("not found")
+	return quotes, nil
 }
 
-func (r *quoteRepository) DeleteQuoteById(ID string) error {
+func (r *quoteRepository) DeleteQuoteById(ID int) error {
 	for i, quote := range r.quotes {
 		if quote.ID == ID {
 			r.quotes = append(r.quotes[:i], r.quotes[i+1:]...)
@@ -46,4 +52,13 @@ func (r *quoteRepository) DeleteQuoteById(ID string) error {
 		}
 	}
 	return errors.New("not found")
+}
+
+func (r *quoteRepository) GetRandomQuote() (models.Quote, error) {
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if len(r.quotes) == 0 {
+		return models.Quote{}, errors.New("no quotes")
+	}
+	idx := rnd.Intn(len(r.quotes))
+	return r.quotes[idx], nil
 }
